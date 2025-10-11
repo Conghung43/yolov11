@@ -5,7 +5,13 @@ import os
 
 def main():
     # Open default camera (0)
-    cap = cv2.VideoCapture(0)
+    gst = (
+        "v4l2src device=/dev/video0 ! "
+        "image/jpeg, width=640, height=480, framerate=30/1 ! "
+        "jpegdec ! videoconvert ! appsink"
+    )
+
+    cap = cv2.VideoCapture(gst, cv2.CAP_GSTREAMER)
 
     # Check if camera opened successfully
     if not cap.isOpened():
