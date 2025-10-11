@@ -35,7 +35,9 @@ def main():
         curr_time = time.time()
         fps = 1.0 / (curr_time - prev_time)
         prev_time = curr_time
-        print(f"FPS: {fps:.2f}")
+        print(f"FPS: {fps:.2f} {frame.shape[0]}x{frame.shape[1]} ")
+
+        
 
         # Convert current frame to grayscale
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -51,7 +53,7 @@ def main():
             if cv2.contourArea(contour) < 500:
                 continue
             (x, y, w, h) = cv2.boundingRect(contour)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         prev_gray = gray.copy()
         frame_count += 1
@@ -62,7 +64,7 @@ def main():
             break
 
         # Sleep to reduce CPU usage
-        time.sleep(0.05)
+        # time.sleep(0.05)
 
     cap.release()
     cv2.destroyAllWindows()
