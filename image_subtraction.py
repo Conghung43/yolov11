@@ -55,11 +55,15 @@ def main():
             motion_detected = True
 
         # If motion detected, save image to disk
-        if motion_detected:
-            timestamp = time.strftime("%Y%m%d-%H%M%S")
-            #output_path = f"output/motion_{timestamp}_{frame_count}.jpg"
-            cv2.imwrite(output_path, frame)
-            print(f"[INFO] Motion detected! Saved: {output_path}")
+        # if motion_detected:
+        #     timestamp = time.strftime("%Y%m%d-%H%M%S")
+        #     output_path = f"output/motion_{timestamp}_{frame_count}.jpg"
+        #     cv2.imwrite(output_path, frame)
+        #     print(f"[INFO] Motion detected! Saved: {output_path}")
+
+        # Print FPS
+        if frame_count % 10 == 0:
+            print(f"[INFO] Frame: {frame_count}")
 
         prev_gray = gray.copy()
         frame_count += 1
