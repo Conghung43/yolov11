@@ -6,6 +6,8 @@ import os
 def main():
     # Open default camera (0)
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     # Check if camera opened successfully
     if not cap.isOpened():
@@ -37,7 +39,7 @@ def main():
         prev_time = curr_time
         print(f"FPS: {fps:.2f} {frame.shape[0]}x{frame.shape[1]} ")
 
-        
+        # Crop
 
         # Convert current frame to grayscale
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
