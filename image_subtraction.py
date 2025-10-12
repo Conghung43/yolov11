@@ -3,11 +3,28 @@ import numpy as np
 import time
 import os
 
+def gstreamer_pipeline(
+    capture_width=800,
+    capture_height=600,
+    display_width=800,
+    display_height=600,
+    framerate=30,
+    flip_method=0
+):
+    return (
+        f"v4l2src device=/dev/video0 ! "
+        f"image/jpeg, width={capture_width}, height={capture_height}, framerate={framerate}/1 ! "
+        f"jpegdec ! "
+        f"videoconvert ! "
+        f"videoscale ! "
+        f"appsink drop=true"
+    )
+
+
+
 def main():
     # Open default camera (0)
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 
     # Check if camera opened successfully
     if not cap.isOpened():

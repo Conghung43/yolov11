@@ -8,3 +8,6 @@ sudo docker run -it --ipc=host --runtime=nvidia \
 cd /workspace
 ls
 
+camera size:
+v4l2-ctl --device=/dev/video0 --list-formats-ext
+
