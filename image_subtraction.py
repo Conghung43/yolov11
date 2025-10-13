@@ -23,8 +23,12 @@ def gstreamer_pipeline(
 
 
 def main():
-    # Open default camera (0)
-    cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
+    # Check if OpenCV is built with GStreamer support
+    if cv2.getBuildInformation().lower().count('gstreamer'):
+        cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
+        
+    else:
+        cap = cv2.VideoCapture(0)    
 
     # Check if camera opened successfully
     if not cap.isOpened():
