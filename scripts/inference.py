@@ -1,8 +1,13 @@
 from ultralytics import YOLO
 import time
+import platform
 
-# Load TensorRT engine file
-model = YOLO("model/yolo11n-seg.engine")
+if platform.system() == "Linux":
+    # Load TensorRT engine file
+    model = YOLO("model/yolo11n-seg.engine")
+else:
+    # Load standard YOLO model file
+    model = YOLO("model/yolo11n-seg.pt")
 
 # Run inference (image path, URL, or numpy array)
 results = model("bus.jpg")

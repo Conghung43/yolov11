@@ -5,7 +5,7 @@ import os
 import platform
 
 # Parameters
-min_area = 1000   # smallest object area to keep
+min_area = 4000   # smallest object area to keep
 max_area = 10000  # largest object area to keep
 
 def gstreamer_pipeline(
@@ -35,7 +35,7 @@ def main():
     else:
         # cap = cv2.VideoCapture(1) 
         # Read video from file for testing
-        cap = cv2.VideoCapture('/Users/nguyenconghung/Documents/Video/ConveyerBelt/Untitled.mov')  # Change to your camera index if needed
+        cap = cv2.VideoCapture('/Users/nguyenconghung/Documents/Video/ConveyerBelt/conveyor.mov')  # Change to your camera index if needed
         # Set manual exposure (values depend on your camera)
         # Usually negative values for webcams = auto-exposure off
         #cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # 0.25 disables auto mode (depends on backend)
