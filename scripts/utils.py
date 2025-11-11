@@ -1,6 +1,7 @@
 import cv2
-import numpy as np
 import math
+from typing import Tuple
+import numpy as np
 
 
 def gstreamer_pipeline(
@@ -45,7 +46,7 @@ def is_bbox_inside_area(bbox, detect_area=(0, 0, 800, 600)) -> bool:
             bx2 <= ax2 and by2 <= ay2)
 
 
-def compute_roundness(mask: np.ndarray) -> tuple[float, tuple[int, int], float]:
+def compute_roundness(mask: np.ndarray) -> Tuple[float, Tuple[int, int], float]:
     """
     Compute the roundness of a binary mask and find its best-fit circle.
     Returns: (roundness, center, radius)
