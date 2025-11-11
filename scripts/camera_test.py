@@ -8,6 +8,7 @@ def main():
     # Check if OpenCV is built with GStreamer support
     if platform.system() == "Linux":#cv2.getBuildInformation().lower().count('gstreamer'):
         print("Using GStreamer pipeline for video capture.")
+        print(cv2.getBuildInformation())
         cap = cv2.VideoCapture(utils.gstreamer_pipeline(), cv2.CAP_GSTREAMER)
         
     else:
