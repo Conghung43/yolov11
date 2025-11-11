@@ -27,3 +27,6 @@ def main():
     if not cap.isOpened():
         print("Error: Could not open camera.")
         return
+    
+if __name__ == "__main__":
+    main()
