@@ -7,9 +7,11 @@ def main():
     status = True
     # Check if OpenCV is built with GStreamer support
     if platform.system() == "Linux":#cv2.getBuildInformation().lower().count('gstreamer'):
+        print("Using GStreamer pipeline for video capture.")
         cap = cv2.VideoCapture(utils.gstreamer_pipeline(), cv2.CAP_GSTREAMER)
         
     else:
+        print("Using default video capture method.")
         # cap = cv2.VideoCapture(1) 
         # Read video from file for testing
         cap = cv2.VideoCapture('Conveyor.mov')  # Change to your camera index if needed
