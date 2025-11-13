@@ -21,7 +21,7 @@ def gstreamer_pipeline(
         f"appsink drop=true"
     )
 
-def is_bbox_inside_area(bbox, detect_area=(0, 0, 800, 600)) -> bool:
+def is_bbox_inside_area(bbox, detect_area) -> bool:
     """
     Check if a bounding box is completely inside a given area.
 
