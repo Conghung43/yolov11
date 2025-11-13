@@ -234,9 +234,9 @@ def main():
                     results = inference.predict_on_image(frame, conf=0.55)
                     if results[0].masks is None:
                         continue
-                    for mask, box in zip(results[0].masks.data, results[0].boxes.xyxy):
+                    for idx, (mask, box) in enumerate(zip(results[0].masks.data, results[0].boxes.xyxy)):
                         # process if class id = 47 (apple)
-                        class_id = int(results[0].boxes.cls[0].cpu().item())
+                        class_id = int(results[0].boxes.cls[idx].cpu().item())
                         if class_id != 47:
                             continue
                         
@@ -298,8 +298,6 @@ def main():
                         #remove older crops to limit memory usage
                         if len(bbox_crops)>2:
                             bbox_crops.pop(0)
-                            
-                    # cv2.imwrite(f"output/frame.jpg", frame)
                     # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                     # cv2.putText(frame, f"Area: {int(area)}", (x, y - 10),
                     #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
