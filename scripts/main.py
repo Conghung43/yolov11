@@ -11,7 +11,7 @@ import math
 # Parameters
 min_area = 10000   # smallest object area to keep
 max_area = 100000  # largest object area to keep
-detect_area = (400, 0, 900, 1080)  # x_min, y_min, x_max, y_max
+detect_area = (400, 10, 900, 1050)  # x_min, y_min, x_max, y_max
 
 # Tracker parameters
 TRAJECTORY_LENGTH = 30  # how many points to keep for trajectory
@@ -37,13 +37,55 @@ class SimpleTracker:
         self.dist_thresh = dist_thresh
         self.tracks = {}  # id -> {'points': deque, 'disappeared': int}
         self.next_id = 1
+        # List to store boundary crossing info for this frame
+        self.boundary_crossings = []
 
     def _new_track(self, point):
         self.tracks[self.next_id] = {
             'points': deque([point], maxlen=self.max_len),
             'disappeared': 0,
+            'roundness': [],  # list of roundness values
+            'ripeness': [],   # list of ripeness percentages
         }
         self.next_id += 1
+
+    def add_metrics(self, track_id, roundness, ripeness):
+        """Add roundness and ripeness metrics to a track."""
+        if track_id in self.tracks:
+            self.tracks[track_id]['roundness'].append(roundness)
+            self.tracks[track_id]['ripeness'].append(ripeness)
+
+    def update_with_metrics(self, detections, metrics=None):
+        """Update tracks and add metrics to matched tracks.
+        
+        Args:
+            detections: list of (x, y) centroids
+            metrics: list of (roundness, ripeness) tuples matching detections order
+        """
+        if metrics is None:
+            metrics = []
+        
+        # First, do standard centroid matching
+        self.update(detections)
+        
+        # Now associate metrics with matched tracks
+        if len(detections) == 0 or len(metrics) == 0:
+            return
+        
+        # Find which detections were just matched/created
+        # We track the last centroid for each track and match it back to detection
+        track_ids = list(self.tracks.keys())
+        for tid in track_ids:
+            last_point = self.tracks[tid]['points'][-1]
+            # Find if this track's last point matches a detection
+            for di, det in enumerate(detections):
+                if di < len(metrics):
+                    # Check if this detection is close to the last point (likely the one that was just matched)
+                    dist = math.hypot(last_point[0] - det[0], last_point[1] - det[1])
+                    # If within a small distance, assume it's this track and add metrics
+                    if dist < self.dist_thresh:
+                        self.add_metrics(tid, metrics[di][0], metrics[di][1])
+                        break
 
     def update(self, detections):
         """detections: list of (x, y) centroids for this frame"""
@@ -110,8 +152,14 @@ class SimpleTracker:
             if tid in self.tracks:
                 del self.tracks[tid]
 
-    def draw(self, frame):
-        """Draw trajectories onto the frame."""
+    def draw(self, frame, detect_area=None):
+        """Draw trajectories onto the frame and check for boundary crossings.
+        
+        Args:
+            frame: the frame to draw on
+            detect_area: (x_min, y_min, x_max, y_max) to check for left-boundary crossing
+        """
+        
         for tid, t in self.tracks.items():
             pts = list(t['points'])
             if len(pts) < 2:
@@ -122,6 +170,111 @@ class SimpleTracker:
                 cv2.line(frame, pts[i - 1], pts[i], color, 5)
             # draw last point as a filled circle
             cv2.circle(frame, pts[-1], 10, color, -1)
+            
+            # Compute and display average metrics
+            avg_roundness = np.mean(t['roundness']) if t['roundness'] else 0.0
+            avg_ripeness = np.mean(t['ripeness']) if t['ripeness'] else 0.0
+            
+            # Draw metrics above the last point
+            label = f"ID:{tid} R:{avg_roundness:.2f} Ripe:{avg_ripeness:.1f}%"
+            cv2.putText(frame, label, (pts[-1][0] - 30, pts[-1][1] - 25),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+            
+            # Check if object crossed the left boundary (detect_area[0])
+            if detect_area is not None and len(pts) >= 2:
+                prev_pt = pts[-2]
+                curr_pt = pts[-1]
+                x_boundary = detect_area[0]
+                # Check if crossed from right to left (prev_x >= boundary and curr_x < boundary)
+                if prev_pt[0] >= x_boundary and curr_pt[0] < x_boundary:
+                    crossing_info = {
+                        'tid': tid,
+                        'avg_roundness': avg_roundness,
+                        'avg_ripeness': avg_ripeness,
+                        'count': len(t['roundness']),
+                        'roundness_range': (min(t['roundness']), max(t['roundness'])) if t['roundness'] else (0, 0),
+                        'ripeness_range': (min(t['ripeness']), max(t['ripeness'])) if t['ripeness'] else (0, 0),
+                    }
+                    self.boundary_crossings.append(crossing_info)
+                    
+                    # Also print to console
+                    print(f"\n[BOUNDARY CROSSED] Track ID {tid} crossed left boundary (x={x_boundary})")
+                    print(f"  Average Roundness: {avg_roundness:.4f}")
+                    print(f"  Average Ripeness:  {avg_ripeness:.2f}%")
+                    print(f"  Total observations: {len(t['roundness'])}")
+                    if t['roundness']:
+                        print(f"  Roundness range: {min(t['roundness']):.4f} - {max(t['roundness']):.4f}")
+                    if t['ripeness']:
+                        print(f"  Ripeness range: {min(t['ripeness']):.2f}% - {max(t['ripeness']):.2f}%")
+                    
+                    # Determine and print grade
+                    if avg_roundness > 0.8 and avg_ripeness > 10:
+                        grade = "Grade: 1"
+                    elif avg_roundness > 0.8 and avg_ripeness <= 10:
+                        grade = "Grade: 2"
+                    elif avg_roundness <= 0.8 and avg_ripeness > 10:
+                        grade = "Grade: 3"
+                    else:
+                        grade = "Grade: 4"
+                    print(f"  {grade}")
+                    print()
+
+    def draw_crossings(self, frame):
+        """Draw boundary crossing info onto the frame."""
+        if not hasattr(self, 'boundary_crossings') or len(self.boundary_crossings) == 0:
+            return frame
+        
+        y_offset = 30
+        crossing = self.boundary_crossings[-1]
+        tid = crossing['tid']
+        avg_r = crossing['avg_roundness']
+        avg_ripe = crossing['avg_ripeness']
+        count = crossing['count']
+        r_min, r_max = crossing['roundness_range']
+        ripe_min, ripe_max = crossing['ripeness_range']
+        
+        # Determine grade based on thresholds
+        if avg_r > 0.8 and avg_ripe > 10:
+            grade = "Grade: 1"
+        elif avg_r > 0.8 and avg_ripe <= 10:
+            grade = "Grade: 2"
+        elif avg_r <= 0.8 and avg_ripe > 10:
+            grade = "Grade: 3"
+        else:
+            grade = "Grade: 4"
+        
+        # Determine color based on track ID
+        color = ((tid * 37) % 255, (tid * 17) % 255, (tid * 97) % 255)
+        
+        # Draw semi-transparent background for readability
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (10, y_offset - 20), (500, y_offset + 110), (0, 0, 0), -1)
+        frame = cv2.addWeighted(overlay, 0.3, frame, 0.7, 0)
+        
+        # Draw text
+        cv2.putText(frame, f"[BOUNDARY CROSSED] Track ID: {tid}", 
+                    (15, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+        cv2.putText(frame, f"Avg Roundness: {avg_r:.4f} (range: {r_min:.4f} - {r_max:.4f})", 
+                    (15, y_offset + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(frame, f"Avg Ripeness: {avg_ripe:.2f}% (range: {ripe_min:.2f}% - {ripe_max:.2f}%)", 
+                    (15, y_offset + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(frame, f"Observations: {count}", 
+                    (15, y_offset + 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        
+        # Determine grade color (green for grade 1, yellow for grade 2, orange for grade 3, red for grade 4)
+        if grade == "Grade: 1":
+            grade_color = (0, 255, 0)  # Green
+        elif grade == "Grade: 2":
+            grade_color = (0, 255, 255)  # Yellow
+        elif grade == "Grade: 3":
+            grade_color = (0, 165, 255)  # Orange
+        else:
+            grade_color = (0, 0, 255)  # Red
+        
+        cv2.putText(frame, grade, 
+                    (15, y_offset + 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, grade_color, 2)
+        
+        return frame
 
 
 
@@ -209,6 +362,7 @@ def main():
 
         # Collect centroids for this frame for tracking
         detections = []
+        detection_metrics = []  # store (roundness, ripeness) for each detection
 
         # Loop through detected contours
         for contour in contours:
@@ -290,6 +444,9 @@ def main():
                             (0, 255, 255),
                             2,
                         )
+                        
+                        # Store metrics for this detection
+                        detection_metrics.append((roundness, ripeness))
 
                         # Save bbox crop image as a copy (avoid view aliasing so later
                         # drawing on `frame` doesn't modify this saved crop)
@@ -309,11 +466,15 @@ def main():
             # Draw last_crop in top right corner and keep scale
             frame[0:crop_h, frame.shape[1]-crop_w:frame.shape[1]] = last_crop
 
+        # Draw checking area
+        cv2.rectangle(frame, (detect_area[0], detect_area[1]), 
+                      (detect_area[2], detect_area[3]), 
+                      [0,255,0], 10)
 
-
-        # After processing contours, update tracker and draw trajectories
-        tracker.update(detections)
-        tracker.draw(frame)
+        # After processing contours, update tracker with metrics and draw trajectories
+        tracker.update_with_metrics(detections, detection_metrics)
+        tracker.draw(frame, detect_area)
+        frame = tracker.draw_crossings(frame)
 
         # write frame to video if enabled
         if out is not None and out.isOpened():

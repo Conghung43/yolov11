@@ -1,5 +1,4 @@
 from ultralytics import YOLO
-from ultralytics.utils.ops import scale_image
 import time
 import platform
 import numpy as np
