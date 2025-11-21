@@ -4,3 +4,7 @@
 /model
 /runs
 .DS_Store
+/data
+/images
+scripts/.DS_Store
+/scripts/__pycache__
