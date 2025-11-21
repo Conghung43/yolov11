@@ -1,0 +1,9 @@
+# Requirements for YOLOv11 Object Detection System
+numpy
+opencv-python
+matplotlib
+PyYAML
+torch
+torchvision
+tqdm
+ultralytics
