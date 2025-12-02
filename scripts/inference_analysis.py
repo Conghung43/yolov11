@@ -79,12 +79,12 @@ if __name__ == "__main__":
     print("=" * 50)
     for stage, time_val in times.items():
         if isinstance(time_val, dict):
-            print(f"\n{stage}:")
+            print("\n{}:".format(stage))
             for substage, subtime in time_val.items():
-                print(f"  - {substage}: {subtime:.2f} ms")
+                print("  - {}: {:.2f} ms".format(substage, subtime))
         else:
-            print(f"{stage}: {time_val:.2f} ms")
+            print("{}: {:.2f} ms".format(stage, time_val))
     
     print("\n" + "=" * 50)
     total_time = sum([v for v in times.values() if not isinstance(v, dict)])
-    print(f"Total Pipeline Time: {total_time:.2f} ms")
+    print("Total Pipeline Time: {:.2f} ms".format(total_time))
