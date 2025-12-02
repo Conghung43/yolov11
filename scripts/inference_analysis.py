@@ -17,12 +17,12 @@ def measure_pipeline_times(image_path):
     # Warm up: Run inference 10 times to stabilize GPU and model performance
     print("Warming up model (10 iterations)...")
     for i in range(10):
-        _ = model(img, imgsz=1280, conf=0.25, verbose=False)
+        _ = model(img, imgsz=640, conf=0.25, verbose=False)
     print("Warm-up complete. Starting measurements...\n")
 
     # Pre-processing (CPU): Resize and normalize image
     start_preprocess = time.time()
-    img_resized = cv2.resize(img, (1280, 1280))
+    img_resized = cv2.resize(img, (640, 640))
     img_normalized = img_resized / 255.0
     end_preprocess = time.time()
 
@@ -37,19 +37,19 @@ def measure_pipeline_times(image_path):
 
     # Full Inference (GPU + NMS): Run the complete model pipeline
     start_full_inference = time.time()
-    results = model(img, imgsz=1280, conf=0.25, verbose=False)
+    results = model(img, imgsz=640, conf=0.25, verbose=False)
     end_full_inference = time.time()
 
     full_inference_time = (end_full_inference - start_full_inference) * 1000  # ms
 
     # Detailed breakdown: Model forward pass (without NMS)
     start_model_forward = time.time()
-    with_nms_results = model.predict(img, imgsz=1280, conf=0.25, verbose=False)
+    with_nms_results = model.predict(img, imgsz=640, conf=0.25, verbose=False)
     end_model_forward = time.time()
 
     # Estimate model forward time by running with very low conf to minimize NMS overhead
     start_forward_only = time.time()
-    forward_results = model.predict(img, imgsz=1280, conf=0.01, max_det=1, verbose=False)
+    forward_results = model.predict(img, imgsz=640, conf=0.01, max_det=1, verbose=False)
     end_forward_only = time.time()
 
     forward_time = (end_forward_only - start_forward_only) * 1000  # ms
