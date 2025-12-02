@@ -14,6 +14,12 @@ def measure_pipeline_times(image_path):
     # Load image
     img = cv2.imread(image_path)
 
+    # Warm up: Run inference 10 times to stabilize GPU and model performance
+    print("Warming up model (10 iterations)...")
+    for i in range(10):
+        _ = model(img, imgsz=1280, conf=0.25, verbose=False)
+    print("Warm-up complete. Starting measurements...\n")
+
     # Pre-processing (CPU): Resize and normalize image
     start_preprocess = time.time()
     img_resized = cv2.resize(img, (1280, 1280))
